@@ -1,0 +1,44 @@
+drac-Xterm
+Copyright 2026 Bang Jack
+
+This product includes software developed for the drac-Xterm project.
+The original drac-Xterm source code is licensed under the Apache License,
+Version 2.0. See the LICENSE file distributed with this work.
+
+Third-Party Software
+--------------------
+
+This product includes or depends on third-party software. Those components
+are not relicensed under the drac-Xterm Apache License 2.0 and remain subject
+to their respective copyright notices and license terms.
+
+* JetBrains Mono
+  Copyright 2020 The JetBrains Mono Project Authors
+  Licensed under the SIL Open Font License, Version 1.1.
+  A copy of that license is included at app/src/main/assets/fonts/OFL.txt.
+
+* AndroidX Core, AndroidX AppCompat, and Material Components for Android
+  Licensed under the Apache License, Version 2.0.
+
+* Apache Commons Compress
+  Licensed under the Apache License, Version 2.0.
+
+* XZ for Java
+  Distributed according to its upstream public-domain dedication.
+
+* zstd-jni
+  Licensed under the BSD 2-Clause License.
+
+* BusyBox, PRoot, talloc, android-shmem, and the PRoot loader
+  These runtime components and their accompanying source distributions remain
+  subject to their respective upstream licenses and notices. Redistributors
+  must review and satisfy those terms independently, including any applicable
+  source-code or notice obligations.
+
+* Optional RootFS distributions and Ollama
+  Root filesystem images and Ollama are obtained or bundled separately and are
+  governed by their own upstream licenses. They are not covered by the
+  drac-Xterm Apache License 2.0.
+
+The names and trademarks of third-party projects belong to their respective
+owners. Inclusion in this NOTICE does not imply endorsement.
