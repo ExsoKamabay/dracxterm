@@ -1,0 +1,26 @@
+#!/bin/sh
+# drac-compat su shim.
+# Session is fake-root (kernel euid 0). `su` / `su -` / `su root` / `sudo su` open a NON-LOGIN
+# interactive root shell (bash) in SUPER_USER state (root / HOME=/root / '#') reading our themed
+# rc — no banner, same session. `su -c CMD` runs CMD as root. A username argument is accepted but
+# ignored (single-user container). Exiting returns to the base NORMAL shell.
+cmd=""
+login=0
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    -c)                       shift; cmd="$1"; shift ;;
+    -l|--login|-)             login=1; shift ;;
+    -s|--shell|-m|-p|--preserve-environment) shift ;;
+    --)                       shift; break ;;
+    -*)                       shift ;;
+    *)                        shift ;;
+  esac
+done
+if [ -n "$cmd" ]; then
+  exec "${SHELL:-/bin/bash}" -c "$cmd"
+fi
+export DRAC_SU=1 USER=root LOGNAME=root HOME=/root
+[ "$login" = 1 ] && cd "$HOME" 2>/dev/null
+RC="${DRAC_HOME:-/home/dracos}/.bashrc"
+if command -v bash >/dev/null 2>&1; then exec bash --rcfile "$RC" -i
+else ENV="$RC"; export ENV; exec "${SHELL:-/bin/sh}" -i; fi

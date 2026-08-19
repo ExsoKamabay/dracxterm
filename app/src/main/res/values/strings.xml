@@ -1,0 +1,17 @@
+<resources>
+    <string name="app_name">xterm</string>
+    <string name="session_label">session 1</string>
+    <string name="workspace_chip">● %1$d</string>
+    <string name="workspace_add">+</string>
+    <string name="copied">Copied</string>
+    <string name="session_ended">session ended</string>
+    <string name="find_title">Find in buffer</string>
+    <string name="find_hint">search text</string>
+    <string name="find_next">Find</string>
+    <string name="find_none">Not found</string>
+    <string name="provision_subtitle">Linux environment</string>
+    <string name="provision_starting">Preparing…</string>
+    <string name="provision_failed">Setup failed: %1$s</string>
+    <string name="retry">Retry</string>
+    <string name="fgs_running">Terminal session running</string>
+</resources>
