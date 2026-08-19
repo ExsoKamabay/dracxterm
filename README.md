@@ -88,3 +88,9 @@ Menu **Storage Access** di `xset` menunjukkan status izin penyimpanan, lokasi mo
 <img src="Screenshot/system-information.jpg" alt="Informasi perangkat di xset" width="260" />
 
 Halaman **About** di `xset` merangkum pabrikan dan model perangkat, versi Android, ABI CPU, kernel, resolusi layar, memori, serta kapasitas penyimpanan.
+
+## Lisensi
+
+Kode asli drac-Xterm dilisensikan di bawah **Apache License 2.0**. Lihat [LICENSE](LICENSE) untuk syarat lengkap dan [NOTICE](NOTICE) untuk pemberitahuan hak cipta serta atribusi komponen pihak ketiga.
+
+Apache License 2.0 tidak menggantikan lisensi komponen pihak ketiga yang disertakan atau digunakan oleh proyek. Setiap komponen tersebut tetap tunduk pada lisensinya masing-masing.
