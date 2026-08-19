@@ -55,36 +55,36 @@ Build pertama akan mengunduh Gradle dan dependensi proyek secara otomatis. Jika 
 
 ### Editor kode dengan Nano
 
-![Editor kode Python di GNU Nano](Screenshot/nano-code_editor.jpg)
+<img src="Screenshot/nano-code_editor.jpg" alt="Editor kode Python di GNU Nano" width="260" />
 
 Tampilan editor GNU Nano yang berjalan di dalam terminal untuk menulis dan menyunting berkas kode, lengkap dengan tombol pintasan seperti `Ctrl`, navigasi, dan `Alt`.
 
 ### Informasi sistem dengan Screenfetch
 
-![Informasi sistem dari Screenfetch](Screenshot/screenfetch.jpg)
+<img src="Screenshot/screenfetch.jpg" alt="Informasi sistem dari Screenfetch" width="260" />
 
 Hasil perintah `screenfetch` yang menampilkan identitas lingkungan Linux, kernel, arsitektur, penggunaan disk, CPU, RAM, dan shell aktif.
 
 ### Daftar penyimpanan internal dan eksternal
 
-![Daftar penyimpanan internal dan eksternal](<Screenshot/list-storage-internal& external.jpg>)
+<img src="Screenshot/list-storage-internal%26%20external.jpg" alt="Daftar penyimpanan internal dan eksternal" width="260" />
 
 Terminal memperlihatkan mount penyimpanan internal sebagai `~/sdcard` serta penyimpanan eksternal sebagai `~/sdcard-1`, termasuk isi direktori keduanya.
 
 ### Pengaturan tampilan terminal
 
-![Pengaturan tampilan xset](Screenshot/display-settings.jpg)
+<img src="Screenshot/display-settings.jpg" alt="Pengaturan tampilan xset" width="260" />
 
 Menu `xset` bagian **Appearance** untuk mengubah tema, font, ukuran teks, cursor, warna latar, spasi baris, padding, dan pratinjau langsung.
 
 ### Izin akses penyimpanan
 
-![Pengaturan akses penyimpanan xset](Screenshot/storage-permission.jpg)
+<img src="Screenshot/storage-permission.jpg" alt="Pengaturan akses penyimpanan xset" width="260" />
 
 Menu **Storage Access** di `xset` menunjukkan status izin penyimpanan, lokasi mount, serta opsi untuk memberikan atau membangun ulang akses penyimpanan.
 
 ### Informasi perangkat
 
-![Informasi perangkat di xset](Screenshot/system-information.jpg)
+<img src="Screenshot/system-information.jpg" alt="Informasi perangkat di xset" width="260" />
 
 Halaman **About** di `xset` merangkum pabrikan dan model perangkat, versi Android, ABI CPU, kernel, resolusi layar, memori, serta kapasitas penyimpanan.
