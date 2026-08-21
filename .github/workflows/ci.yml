@@ -79,6 +79,14 @@ jobs:
         run: |
           set -eu
           "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;27.0.12077973"
+          # The runner image exports ANDROID_NDK_HOME/ANDROID_NDK_ROOT pointing at
+          # whichever NDK it ships. prebuilts/lib/common.sh now enforces the pin
+          # regardless, but leaving stale variables pointing elsewhere just invites
+          # confusion in the logs.
+          {
+            echo "ANDROID_NDK_HOME=$ANDROID_HOME/ndk/27.0.12077973"
+            echo "ANDROID_NDK_ROOT=$ANDROID_HOME/ndk/27.0.12077973"
+          } >> "$GITHUB_ENV"
 
       - name: Build every prebuilt from pinned sources
         run: ./prebuilts/build.sh

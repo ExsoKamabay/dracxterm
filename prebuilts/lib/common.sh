@@ -21,17 +21,50 @@ warn() { printf '\033[33mwarn:\033[0m %s\n' "$*" >&2; }
 # Locates the NDK pinned in manifest.env. Deliberately refuses to fall back to
 # "whatever NDK is around": the whole point of this directory is that the binary
 # is a function of the recipe, not of the machine.
+# Reads Pkg.Revision out of an NDK's source.properties, e.g. "27.0.12077973".
+ndk_revision_at() {
+    local root="$1"
+    [ -f "$root/source.properties" ] || return 1
+    sed -n 's/^Pkg\.Revision *= *//p' "$root/source.properties" | tr -d '\r'
+}
+
 setup_toolchain() {
-    local ndk_root
-    if [ -n "${ANDROID_NDK_HOME:-}" ] && [ -d "$ANDROID_NDK_HOME" ]; then
-        ndk_root="$ANDROID_NDK_HOME"
-    else
-        local sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}}"
-        ndk_root="$sdk/ndk/$NDK_VERSION"
-    fi
-    [ -d "$ndk_root" ] || die "NDK $NDK_VERSION not found at $ndk_root. Install it:
+    # The pinned version wins over anything the environment offers.
+    #
+    # This used to prefer $ANDROID_NDK_HOME whenever it was set, which silently
+    # defeated the pin: a GitHub runner sets that variable to whatever NDK its
+    # image ships, so CI built against 27.3.13750724 while manifest.env pinned
+    # 27.0.12077973 and every log line claimed the pin had been honoured. An
+    # unenforced pin is worse than no pin, because it reads as a guarantee.
+    local sdk="${ANDROID_HOME:-${ANDROID_SDK_ROOT:-$HOME/Android/Sdk}}"
+    local ndk_root=""
+    local candidate
+
+    for candidate in "$sdk/ndk/$NDK_VERSION" "${ANDROID_NDK_HOME:-}" "${ANDROID_NDK_ROOT:-}"; do
+        [ -n "$candidate" ] && [ -d "$candidate" ] || continue
+        local rev
+        rev=$(ndk_revision_at "$candidate") || continue
+        if [ "$rev" = "$NDK_VERSION" ]; then
+            ndk_root="$candidate"
+            break
+        fi
+    done
+
+    if [ -z "$ndk_root" ]; then
+        local found=""
+        [ -d "$sdk/ndk" ] && found=$(ls "$sdk/ndk" 2>/dev/null | tr '\n' ' ')
+        [ -n "${ANDROID_NDK_HOME:-}" ] && [ -d "$ANDROID_NDK_HOME" ] && \
+            found="$found ANDROID_NDK_HOME=$(ndk_revision_at "$ANDROID_NDK_HOME" || echo unknown)"
+        die "NDK $NDK_VERSION (the version pinned in prebuilts/manifest.env, matching
+  ndkVersion in app/build.gradle.kts) was not found. Install it:
+
     sdkmanager \"ndk;$NDK_VERSION\"
-  or point ANDROID_NDK_HOME at it."
+
+  Available here: ${found:-none}
+
+  A different NDK is NOT substituted on purpose: these binaries go into the APK,
+  and which compiler built them has to be a property of the recipe."
+    fi
 
     local host_tag
     case "$(uname -s)" in
@@ -171,6 +204,20 @@ install_artifact() {
 # mistake that produces an APK that installs and then crashes on first exec.
 assert_arm64() {
     local f="$1"
-    "$READELF" -h "$f" | grep -q 'AArch64' \
-        || die "$f is not an AArch64 binary"
+    [ -f "$f" ] || die "$f does not exist"
+
+    # Read e_machine straight out of the ELF header rather than parsing a tool's
+    # prose. ELF64 header: e_machine is a 2-byte little-endian field at offset
+    # 0x12, and EM_AARCH64 is 183 (0xB7).
+    #
+    # The previous version grepped llvm-readelf's output for "AArch64". That is
+    # not stable: the same binary is llvm-readobj under another name, and its
+    # output says "Arch: aarch64" in lower case. A CI runner with a different NDK
+    # therefore failed this check on a perfectly good arm64 binary, and the error
+    # message pointed at the architecture instead of at the parsing.
+    local machine
+    machine=$(od -An -tu2 -j18 -N2 --endian=little "$f" 2>/dev/null | tr -d ' ') \
+        || die "could not read the ELF header of $f"
+
+    [ "$machine" = "183" ] || die "$f is not an AArch64 binary (ELF e_machine=$machine, expected 183)"
 }
