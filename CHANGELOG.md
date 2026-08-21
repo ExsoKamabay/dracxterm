@@ -53,8 +53,24 @@ All notable changes to drac-Xterm are documented in this file.
   android-shmem's actual copyright line — `NOTICE` referenced both, and neither was
   present in the working tree.
 
+### Security
+
+- `OllamaInstaller.download()` followed the `Location` header of a redirect without
+  checking its scheme, so a redirect to `http://` would have fetched an executable
+  payload in cleartext. `RootfsDownloader` already refused every non-HTTPS hop; the two
+  now behave identically. The SHA-256 pin meant this was never remote code execution, but
+  it leaked what was being downloaded and contradicted the app's stated network
+  behaviour. The same loop also passed a possibly-relative `Location` to `URL(String)`,
+  which throws; it is now resolved against the current URL.
+- `docs/PRIVACY-AUDIT.md` — every network call site and permission request site traced to
+  what triggers it, so "no telemetry" and "never requested at startup" can be checked
+  rather than taken on trust.
+
 ### Fixed
 
+- `RootfsArchive.sizeBytes` did not compile: the `Source.Asset` branch read the `when`
+  subject from inside a `runCatching` lambda, where the smart cast does not hold. Nothing
+  in the repository could be built until this was fixed.
 - Release-signing credentials were validated during Gradle *configuration*, which made
   every invocation fail without them — including `assembleDebug` and lint. The check now
   runs against the task graph and only fires when a release artifact is actually built.

@@ -183,7 +183,17 @@ class OllamaInstaller(private val ctx: Context) {
         var conn: HttpURLConnection? = null
         var hops = 0
         while (true) {
-            conn = (URL(current).openConnection() as HttpURLConnection).apply {
+            val parsed = URL(current)
+            // Every hop must stay on HTTPS, exactly as RootfsDownloader.openWithRedirects
+            // requires. Without this the Location header alone decides the transport, so a
+            // redirect to http:// would pull an executable payload in cleartext. The SHA-256
+            // pin below still refuses to install a tampered file, but a downgraded hop leaks
+            // what is being fetched and hands an on-path attacker a free denial of service —
+            // and it contradicts what the app tells the user about its network use.
+            if (!parsed.protocol.equals("https", ignoreCase = true)) {
+                throw IOException("refusing a non-HTTPS URL: $current")
+            }
+            conn = (parsed.openConnection() as HttpURLConnection).apply {
                 instanceFollowRedirects = false
                 connectTimeout = 30_000
                 readTimeout = 60_000
@@ -196,7 +206,9 @@ class OllamaInstaller(private val ctx: Context) {
                     ?: throw IOException("HTTP $code without Location")
                 conn.disconnect()
                 if (++hops > 5) throw IOException("too many redirects")
-                current = loc
+                // Resolve against the current URL: Location is allowed to be relative, and
+                // URL(String) would throw on one.
+                current = URL(parsed, loc).toString()
                 continue
             }
             if (code != 200) throw IOException("HTTP $code fetching the pinned release artifact")
