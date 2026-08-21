@@ -46,7 +46,7 @@ table is wrong and the script is right.
 | 22 | Git LFS not needed to build | done | No LFS rule on either side; a plain `git clone` produces a buildable tree |
 | 23 | Distribution links point at releases, not a personal drive | done | README links GitHub Releases; the Google Drive links are gone |
 | 24 | The project builds from a clean checkout | done | **Verified**: `./gradlew assembleDebug` and `assembleRelease` both succeed, `./native-tests/run-tests.sh` passes 160 assertions, 0 failures. This required a fix — `RootfsArchive.sizeBytes` did not compile (smart cast lost inside a `runCatching` lambda), so *no* build of this tree was possible before |
-| 25 | Build is reproducible across machines | partial | `ndkVersion` is pinned to 27.0.12077973 so the C++ engine does not depend on whichever NDK a machine has. `prebuilts/` now rebuilds all five prebuilt binaries from pinned sources, **bit-identically across build directories** (verified, and re-verified weekly by CI). The APK itself is not RB-verified: that needs the release key and IzzyOnDroid's own toolchain |
+| 25 | Build is reproducible across machines | partial | `ndkVersion` is pinned to 27.0.12077973 so the C++ engine does not depend on whichever NDK a machine has. `prebuilts/` rebuilds all five prebuilt binaries from pinned sources **bit-identically across machines** — a GitHub runner reproduces every hash this desktop produces, re-checked by CI weekly. The APK itself is not RB-verified: that needs the release key and IzzyOnDroid's own toolchain |
 
 ## Risks worth deciding on deliberately
 

@@ -80,13 +80,14 @@ Getting there needed three fixes, all found by measurement rather than assumed:
    makefile a stand-in that reports the pinned tag, so `proot --version` says
    `v5.1.107.91` wherever it was built.
 
-Verified across build directories, and separately with one build inside the
-repository and one outside it — the case that produced the bug above. Four of
-the five hashes are also identical to what a GitHub runner produces, so this is
-not only reproducible on one machine.
+Verified three ways: across build directories of different lengths; with one
+build inside the git repository and one outside it (the case that produced the
+third bug); and **across machines** — a GitHub `ubuntu-latest` runner produces
+all five of the hashes above, byte for byte, and CI re-checks that on every
+scheduled run.
 
-It is still not a claim that a different host OS or a differently-built NDK
-produces the same bytes.
+What is still unverified is a different host OS or a differently-built NDK.
+Both builds compared here are Linux x86-64 with the same NDK package.
 
 ## Patches
 
