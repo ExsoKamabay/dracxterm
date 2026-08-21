@@ -52,11 +52,11 @@ comparing SHA-256:
 libandroid-shmem.so    c80ccfe16e30c28f00d3a46cb1f33983…  identical
 libtalloc.so           557e93989ea7b0ce471620f04941442e…  identical
 libbusybox.so          0d9f6306030e7af3ee8e98a8c6dc432b…  identical
-libproot.so            66709d4644622cf21f6009dcad89a372…  identical
+libproot.so            ec31292345954a947bcf7dd01c66a0f1…  identical
 libproot-loader.so     493c90afc5a88523d864007bca95172c…  identical
 ```
 
-Getting there needed two fixes, both found by measurement rather than assumed:
+Getting there needed three fixes, all found by measurement rather than assumed:
 
 1. **Absolute paths leak into the binary.** clang records the source path in
    `__FILE__`, assertion strings and `DW_AT_comp_dir`, so the same sources built
@@ -71,8 +71,22 @@ Getting there needed two fixes, both found by measurement rather than assumed:
    builds — a clock reading. The recipe replaces it with a fixed string, so the
    banner reads `BusyBox v1.38.0 (drac-Xterm)`.
 
-This is reproducibility across *paths and time on one machine*. It is not a
-claim that a different host OS or a different NDK build produces the same bytes.
+3. **PRoot inherits whatever git repository it is built inside.** Its
+   `GNUmakefile` stamps `git describe --tags --dirty --always` into `build.h`,
+   and git walks up parent directories — so a build under `prebuilts/work`
+   stamped *drac-Xterm's* commit into PRoot's version string, while a build in
+   `/tmp` got no version at all. Wrong twice over: the value is meaningless, and
+   it makes the binary depend on where it was built. The recipe now feeds the
+   makefile a stand-in that reports the pinned tag, so `proot --version` says
+   `v5.1.107.91` wherever it was built.
+
+Verified across build directories, and separately with one build inside the
+repository and one outside it — the case that produced the bug above. Four of
+the five hashes are also identical to what a GitHub runner produces, so this is
+not only reproducible on one machine.
+
+It is still not a claim that a different host OS or a differently-built NDK
+produces the same bytes.
 
 ## Patches
 
