@@ -36,7 +36,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       # ------------------------------------------------------------------
       # Gate: refuse to build if the repository is not in a releasable state.
@@ -70,7 +70,7 @@ jobs:
       # ------------------------------------------------------------------
       # Toolchain
       # ------------------------------------------------------------------
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'

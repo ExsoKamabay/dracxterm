@@ -16,7 +16,7 @@ jobs:
     name: IzzyOnDroid readiness
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Check inclusion requirements
         run: python3 scripts/verify-izzy-metadata.py
 
@@ -24,7 +24,7 @@ jobs:
     name: Terminal engine tests
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Build and run the host-side engine tests
         run: ./native-tests/run-tests.sh
 
@@ -32,9 +32,9 @@ jobs:
     name: Debug build
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: '17'
