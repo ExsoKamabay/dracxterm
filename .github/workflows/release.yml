@@ -1,0 +1,162 @@
+# Publish a signed release APK when a v* tag is pushed.
+#
+# IzzyOnDroid tracks this repository's GitHub Releases and picks up the APK
+# attached to each new tag, so the artefact this workflow uploads IS the thing
+# that ends up in the repo. Three properties therefore matter more than usual:
+#
+#   1. The tag and versionName must agree, or the released file claims a version
+#      the store cannot reconcile with the tag it came from.
+#   2. The APK must be signed with the release key. An unsigned or debug-signed
+#      APK cannot be installed as an update and will be rejected.
+#   3. A published APK is never replaced. If something is wrong, cut a new
+#      versionCode and a new tag; do not re-upload over an existing release.
+#
+# Required repository secrets (Settings -> Secrets and variables -> Actions):
+#
+#   DRACOS_KEYSTORE_BASE64   base64 of the release keystore
+#                            (base64 -w0 ~/.android-keys/dracxterm-release.jks)
+#   DRACOS_STORE_PASSWORD    keystore password
+#   DRACOS_KEY_ALIAS         key alias
+#   DRACOS_KEY_PASSWORD      key password
+#
+# See docs/SECURITY-KEY-ROTATION.md. The keystore that used to live in this
+# repository is burned and must not be used for any of the above.
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write   # needed to create the release and upload the APK
+
+jobs:
+  release:
+    name: Build, sign and publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ------------------------------------------------------------------
+      # Gate: refuse to build if the repository is not in a releasable state.
+      # These run before anything expensive so a bad tag fails in seconds.
+      # ------------------------------------------------------------------
+      - name: Check IzzyOnDroid inclusion requirements
+        run: python3 scripts/verify-izzy-metadata.py
+
+      - name: Tag must match versionName
+        run: |
+          set -eu
+          tag="${GITHUB_REF_NAME#v}"
+          version_name=$(sed -n 's/.*versionName *= *"\([^"]*\)".*/\1/p' app/build.gradle.kts | head -1)
+          version_code=$(sed -n 's/.*versionCode *= *\([0-9]*\).*/\1/p' app/build.gradle.kts | head -1)
+          printf 'tag=%s versionName=%s versionCode=%s\n' "$tag" "$version_name" "$version_code"
+          if [ "$tag" != "$version_name" ]; then
+            printf 'error: tag v%s does not match versionName %s\n' "$tag" "$version_name" >&2
+            exit 1
+          fi
+          # Every published versionCode needs its own changelog entry, in every locale.
+          for locale in fastlane/metadata/android/*/; do
+            f="${locale}changelogs/${version_code}.txt"
+            [ -f "$f" ] || { printf 'error: missing %s\n' "$f" >&2; exit 1; }
+          done
+          echo "VERSION_NAME=$version_name" >> "$GITHUB_ENV"
+          echo "VERSION_CODE=$version_code" >> "$GITHUB_ENV"
+
+      - name: Terminal engine tests
+        run: ./native-tests/run-tests.sh
+
+      # ------------------------------------------------------------------
+      # Toolchain
+      # ------------------------------------------------------------------
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Keep this in step with ndkVersion in app/build.gradle.kts.
+      - name: Install the pinned NDK
+        run: |
+          set -eu
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
+            "ndk;27.0.12077973" "cmake;3.22.1" "platforms;android-36" "build-tools;36.0.0"
+
+      # ------------------------------------------------------------------
+      # Signing material, present only for this job, wiped afterwards.
+      # ------------------------------------------------------------------
+      - name: Decode the release keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.DRACOS_KEYSTORE_BASE64 }}
+        run: |
+          set -eu
+          if [ -z "${KEYSTORE_BASE64:-}" ]; then
+            echo "error: DRACOS_KEYSTORE_BASE64 is not set; cannot sign a release" >&2
+            exit 1
+          fi
+          install -m 700 -d "$RUNNER_TEMP/keys"
+          printf '%s' "$KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/keys/release.jks"
+          chmod 600 "$RUNNER_TEMP/keys/release.jks"
+
+      - name: assembleRelease
+        env:
+          ORG_GRADLE_PROJECT_DRACOS_STORE_PASSWORD: ${{ secrets.DRACOS_STORE_PASSWORD }}
+          ORG_GRADLE_PROJECT_DRACOS_KEY_ALIAS: ${{ secrets.DRACOS_KEY_ALIAS }}
+          ORG_GRADLE_PROJECT_DRACOS_KEY_PASSWORD: ${{ secrets.DRACOS_KEY_PASSWORD }}
+        run: |
+          set -eu
+          ORG_GRADLE_PROJECT_DRACOS_STORE_FILE="$RUNNER_TEMP/keys/release.jks" \
+            ./gradlew --no-daemon clean assembleRelease
+
+      # ------------------------------------------------------------------
+      # Prove the artefact is what it claims to be, before anyone can install it.
+      # ------------------------------------------------------------------
+      - name: Verify the signature and record the certificate
+        run: |
+          set -eu
+          apk=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
+          [ -n "$apk" ] || { echo "error: no release APK was produced" >&2; exit 1; }
+          apksigner=$(find "$ANDROID_HOME/build-tools" -name apksigner | sort | tail -1)
+          "$apksigner" verify --verbose --print-certs "$apk"
+          echo "APK_PATH=$apk" >> "$GITHUB_ENV"
+
+      - name: Check the APK against the IzzyOnDroid size reserve
+        run: |
+          set -eu
+          bytes=$(stat -c%s "$APK_PATH")
+          mb=$((bytes / 1000000))
+          printf 'release APK: %s bytes (%s MB)\n' "$bytes" "$mb"
+          # IzzyOnDroid reserves roughly 30 MB per app and keeps several versions.
+          # This is a warning, not a hard failure: the maintainer decides whether to
+          # ask for an exception. It must never pass silently, though.
+          if [ "$mb" -gt 30 ]; then
+            printf '::warning::release APK is %s MB, above the ~30 MB IzzyOnDroid reserve\n' "$mb"
+          fi
+
+      - name: Rename the artefact after the version
+        run: |
+          set -eu
+          out="drac-Xterm-${VERSION_NAME}-${VERSION_CODE}-arm64-v8a.apk"
+          cp "$APK_PATH" "$out"
+          sha256sum "$out" > "$out.sha256"
+          cat "$out.sha256"
+          echo "RELEASE_APK=$out" >> "$GITHUB_ENV"
+
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -eu
+          # --verify-tag: never invent a tag. The release must correspond to the
+          # tag that actually triggered this run.
+          gh release create "$GITHUB_REF_NAME" \
+            --verify-tag \
+            --title "drac-Xterm $VERSION_NAME" \
+            --notes-file "fastlane/metadata/android/en-US/changelogs/${VERSION_CODE}.txt" \
+            "$RELEASE_APK" "$RELEASE_APK.sha256"
+
+      - name: Wipe the signing material
+        if: always()
+        run: rm -rf "$RUNNER_TEMP/keys"

@@ -1,0 +1,48 @@
+*.iml
+.gradle/
+/local.properties
+/.idea/
+/build/
+/app/build/
+/captures/
+.externalNativeBuild/
+.cxx/
+
+# --- Release signing material: never commit. Files stay on disk for local
+# --- signed builds; this only prevents them from entering version control.
+/keystore/
+*.keystore
+*.jks
+*.p12
+*.pem
+*.key
+# Signing credentials belong in ~/.gradle/gradle.properties, NOT in the repo.
+keystore.properties
+signing.properties
+
+# Host-side native engine tests (native-tests/run-tests.sh) build output.
+# The root /build/ rule above is anchored, so this path needs its own entry.
+native-tests/build/
+
+# --- Linux rootfs images: NEVER commit (ADR-0001). A ~200 MB archive in git
+# --- history bloats every clone and pushes the APK far past the ~30 MB that
+# --- IzzyOnDroid reserves per app. Build-time drop-in only; keep it locally.
+/app/src/main/assets/rootfs/*
+!/app/src/main/assets/rootfs/README.txt
+*.tar.xz
+*.tar.gz
+*.tar.zst
+*.tgz
+*.txz
+
+# Build outputs that must never be committed (releases are attached to tags).
+*.apk
+*.aab
+*.idsig
+/app/release/
+
+# Local assistant/tooling scratch files. Not part of the app, not needed to build it,
+# and IzzyOnDroid's inclusion policy is explicitly hostile to apps written by generative
+# AI tools — publishing a skills catalogue at the repo root invites that question for no
+# benefit. Keep it on disk; keep it out of the repository.
+/SKILLS.json

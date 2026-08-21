@@ -1,0 +1,43 @@
+drac-Xterm is a terminal emulator for ARM64 (arm64-v8a) Android devices. The terminal
+engine — ANSI/VT parser, screen buffer, PTY handling and UTF-8 rendering — is written
+from scratch in C++ and driven by a Kotlin user interface. No device root required.
+
+<b>Terminal</b>
+
+<ul>
+<li>ANSI/VT escape sequences: colours, cursor shapes, scrollback, alternate screen</li>
+<li>Full UTF-8 with wide-character (CJK) and combining-mark support</li>
+<li>Text selection, buffer search, clipboard copy and bracketed paste</li>
+<li>Mouse tracking for applications that request it</li>
+<li>Up to five independent workspaces, each with its own shell, PTY, working directory
+and history; swipe to switch</li>
+<li>A foreground service keeps running sessions alive when you leave the app</li>
+<li>Extra key bar: arrows, Ctrl, Alt, Esc, Tab, Home, End, PgUp/PgDn, paste, search, zoom</li>
+<li>Pinch to zoom, JetBrains Mono or a system font</li>
+</ul>
+
+<b>Configuration</b>
+
+Type <i>xset</i> in the terminal to open a settings dashboard rendered inside the
+terminal itself: themes, fonts, text size and spacing, cursor style, scrollback depth,
+padding, storage access and device information, plus configuration export and import.
+
+<b>Linux environment (optional)</b>
+
+Out of the box the app runs a BusyBox shell, which is a complete working terminal on its
+own. If you want a full distribution, drac-Xterm can set up an ARM64 Linux root
+filesystem and run it through PRoot in the app sandbox. That image is <b>not</b> shipped
+inside the APK: the app asks first and downloads it only after you explicitly agree, or
+you can point it at an archive you already have. Downloads are checked against a pinned
+SHA-256 hash before anything is unpacked.
+
+<b>Storage</b>
+
+Storage access is entirely optional and is never requested at startup. Grant it from
+Settings and internal storage appears at ~/sdcard, with a valid external volume at
+~/sdcard-1. Deny it and every other feature still works.
+
+<b>Privacy</b>
+
+No analytics, no advertising, no tracking libraries, no telemetry, no account. The app
+opens a network connection only when you ask it to download something.

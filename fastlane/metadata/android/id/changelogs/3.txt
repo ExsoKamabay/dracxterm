@@ -1,0 +1,6 @@
+- Root filesystem Linux tidak lagi disertakan dalam APK. Aplikasi kini menawarkan
+  unduhan image ARM64 hanya setelah Anda menyetujuinya, dan memverifikasi hash SHA-256
+  sebelum diekstrak. Anda juga dapat memakai arsip milik sendiri.
+- Tanpa image Linux, aplikasi tetap membuka shell BusyBox yang berfungsi penuh.
+- Nama aplikasi kini drac-Xterm.
+- Asal, versi, dan lisensi setiap biner prebuilt kini didokumentasikan.

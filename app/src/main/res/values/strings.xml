@@ -1,0 +1,35 @@
+<resources>
+    <string name="app_name">drac-Xterm</string>
+    <string name="session_label">session 1</string>
+    <string name="workspace_chip">● %1$d</string>
+    <string name="workspace_add">+</string>
+    <string name="copied">Copied</string>
+    <string name="session_ended">session ended</string>
+    <string name="find_title">Find in buffer</string>
+    <string name="find_hint">search text</string>
+    <string name="find_next">Find</string>
+    <string name="find_none">Not found</string>
+    <string name="provision_subtitle">Linux environment</string>
+    <string name="provision_starting">Preparing…</string>
+    <string name="provision_failed">Setup failed: %1$s</string>
+    <string name="retry">Retry</string>
+    <string name="fgs_running">Terminal session running</string>
+
+    <!-- Opt-in download of a Linux root filesystem. This copy is the consent itself, so it
+         states plainly what is fetched, from where, how large it is, and that the file is
+         not covered by the checks performed on the app itself. -->
+    <string name="consent_title">Add a Linux environment?</string>
+    <string name="consent_body">drac-Xterm is ready to use right now with its built-in BusyBox shell — no download needed.\n\nFor a full Linux system with a package manager, drac-Xterm can fetch %1$s (%2$s) directly from %3$s. The file is checked against a known SHA-256 checksum before it is unpacked into this app\'s private storage.\n\nThat archive is third-party software. It is not part of drac-Xterm and it is not covered by the review or scanning that the app store performed on this app. Downloading it is your choice.\n\nAbout %4$s of free space is needed.\n\nIf you skip this, drac-Xterm will not ask again on later launches.</string>
+    <string name="consent_body_resume">A previous download of %1$s stopped after %2$s. drac-Xterm can continue from there.\n\nThe file comes from %3$s and is checked against a known SHA-256 checksum before it is unpacked. It is third-party software, not part of drac-Xterm, and not covered by the app store\'s review of this app.</string>
+    <string name="consent_download">Download the Linux image</string>
+    <string name="consent_download_resume">Resume the download</string>
+    <string name="consent_skip">Continue with BusyBox</string>
+    <string name="consent_cancel">Cancel</string>
+    <string name="consent_downloading">Downloading %1$s… %2$s of %3$s</string>
+    <string name="consent_downloading_unknown">Downloading %1$s… %2$s</string>
+    <string name="consent_verifying">Checking the downloaded file…</string>
+    <string name="consent_cancelled">Download cancelled. Starting BusyBox shell.</string>
+    <string name="consent_download_failed">Download failed: %1$s</string>
+    <string name="consent_starting_busybox">Starting BusyBox shell…</string>
+    <string name="consent_no_network">No network connection. Connect and try again, or continue with BusyBox.</string>
+</resources>

@@ -1,0 +1,61 @@
+# Every push and pull request. No signing material is involved here, so this
+# workflow runs for forks and outside contributors too.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  izzy-metadata:
+    name: IzzyOnDroid readiness
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check inclusion requirements
+        run: python3 scripts/verify-izzy-metadata.py
+
+  native-tests:
+    name: Terminal engine tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and run the host-side engine tests
+        run: ./native-tests/run-tests.sh
+
+  build-debug:
+    name: Debug build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - uses: gradle/actions/setup-gradle@v4
+
+      # Keep this in step with ndkVersion in app/build.gradle.kts.
+      - name: Install the pinned NDK
+        run: |
+          set -eu
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install \
+            "ndk;27.0.12077973" "cmake;3.22.1" "platforms;android-36" "build-tools;36.0.0"
+
+      # assembleDebug is deliberate: a release build needs the signing key, which a
+      # pull request must never have access to. This still compiles the whole app,
+      # the C++ engine and every resource.
+      - name: assembleDebug
+        run: ./gradlew --no-daemon assembleDebug
+
+      - name: Report the debug APK size
+        run: |
+          set -eu
+          apk=$(find app/build/outputs/apk/debug -name '*.apk' | head -1)
+          printf '%s: %s\n' "$apk" "$(du -h "$apk" | cut -f1)"

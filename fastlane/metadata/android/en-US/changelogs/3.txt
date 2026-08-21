@@ -1,0 +1,6 @@
+- The Linux root filesystem is no longer bundled in the APK. The app now offers to
+  download an ARM64 image only after you explicitly agree, and verifies it against a
+  pinned SHA-256 hash before unpacking. You can also supply your own archive.
+- Without a Linux image the app still starts a fully working BusyBox shell.
+- App name is now drac-Xterm.
+- Documented the origin, version and licence of every bundled prebuilt binary.

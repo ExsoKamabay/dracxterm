@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Scrollable so the consent copy stays fully readable on short screens and at large
+     font scales; the inner layout keeps the original centred splash composition. -->
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@color/term_bg"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center"
+        android:minHeight="200dp"
+        android:padding="32dp">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/app_name"
+            android:textColor="@color/term_accent"
+            android:textSize="30sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.05"
+            android:layout_marginBottom="6dp" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/provision_subtitle"
+            android:textColor="@color/key_fg"
+            android:textSize="12sp"
+            android:layout_marginBottom="28dp" />
+
+        <TextView
+            android:id="@+id/status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/provision_starting"
+            android:textColor="@color/term_fg"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:minLines="2"
+            android:layout_marginBottom="18dp" />
+
+        <ProgressBar
+            android:id="@+id/progress"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:max="100"
+            android:indeterminate="true"
+            android:progressTint="@color/term_accent"
+            android:indeterminateTint="@color/term_accent" />
+
+        <!-- Opt-in panel. Hidden unless the app has no Linux image and the user has not
+             already answered. Nothing is downloaded until consentDownload is pressed. -->
+        <LinearLayout
+            android:id="@+id/consent"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:visibility="gone"
+            android:layout_marginTop="8dp">
+
+            <TextView
+                android:id="@+id/consentTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/consent_title"
+                android:textColor="@color/term_fg"
+                android:textSize="17sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="10dp" />
+
+            <TextView
+                android:id="@+id/consentBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/key_fg"
+                android:textSize="13sp"
+                android:lineSpacingExtra="3sp"
+                android:layout_marginBottom="18dp" />
+
+            <Button
+                android:id="@+id/consentDownload"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/consent_download"
+                android:textColor="@color/term_bg"
+                android:backgroundTint="@color/term_accent" />
+
+            <Button
+                android:id="@+id/consentSkip"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/consent_skip"
+                android:textColor="@color/term_fg"
+                android:backgroundTint="@color/key_bg"
+                android:layout_marginTop="8dp" />
+        </LinearLayout>
+
+        <Button
+            android:id="@+id/cancel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/consent_cancel"
+            android:textColor="@color/term_fg"
+            android:backgroundTint="@color/key_bg"
+            android:visibility="gone"
+            android:layout_marginTop="20dp" />
+
+        <Button
+            android:id="@+id/retry"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/retry"
+            android:textColor="@color/term_fg"
+            android:backgroundTint="@color/key_bg"
+            android:visibility="gone"
+            android:layout_marginTop="20dp" />
+    </LinearLayout>
+</ScrollView>

@@ -1,0 +1,3 @@
+# The Linux root filesystem is no longer bundled in the APK (see docs/adr/0001-rootfs-delivery.md),
+# so there is nothing left to track with Git LFS. Adding a large binary back here would
+# reintroduce the clone-size and LFS-bandwidth problems that ADR-0001 removed.

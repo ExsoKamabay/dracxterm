@@ -1,0 +1,3 @@
+# Copy to local.properties and point to your SDK/NDK. Do NOT commit local.properties.
+sdk.dir=/path/to/Android/Sdk
+# ndk.dir is optional; the NDK is resolved from the SDK by default.
