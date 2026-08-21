@@ -53,6 +53,33 @@ All notable changes to drac-Xterm are documented in this file.
   android-shmem's actual copyright line — `NOTICE` referenced both, and neither was
   present in the working tree.
 
+### Added — reproducible prebuilt binaries
+
+- `prebuilts/` — every ARM64 binary in the APK can now be rebuilt from pinned upstream
+  sources with the pinned NDK: BusyBox, talloc, PRoot + its loader, and libandroid-shmem.
+  `./prebuilts/build.sh` builds all five; `--install` copies them into `jniLibs`.
+  Previously none of them could be reproduced from this repository, which blocked any
+  reproducible-build verification and left a BusyBox from 2018 in place with no way to
+  replace it.
+- The five artifacts are **bit-identical across build directories**, verified by building
+  the whole set twice into paths of different lengths. Two causes of drift had to be
+  fixed to get there: clang recording absolute source paths (`-ffile-prefix-map`), and
+  BusyBox stamping the wall clock into its `--help` banner.
+- CI rebuilds them weekly and re-checks reproducibility, so the recipes cannot rot
+  silently against four moving upstreams.
+- Six patches, each carrying its reasoning: BusyBox still assumes bionic lacks
+  `strchrnul`/`getsid`/`sethostname`/`adjtimex` as it did in 2012, which breaks the
+  static link; PRoot omits `<string.h>` in its ashmem extension and needs gawk-only awk
+  extensions to build; android-shmem omits `<fcntl.h>` and hardcodes Termux's `$PREFIX/tmp`
+  through `_PATH_TMP`, now read from `TMPDIR` at runtime instead.
+- Correction to `docs/THIRD-PARTY-BINARIES.md`: the shipped `libandroid-shmem.so` comes
+  from `termux/libandroid-shmem`, not `pelya/android-shmem`. PRoot's sysvipc extension
+  calls `libandroid_shmat_fd()`, which only the fork has, so the documented upstream
+  could not have produced the shipped binary.
+
+  Nothing is installed into `jniLibs` by this change. The recipe produces candidates;
+  a BusyBox jump from 1.29.3 to 1.38.0 needs device testing before it ships.
+
 ### Security
 
 - `OllamaInstaller.download()` followed the `Location` header of a redirect without

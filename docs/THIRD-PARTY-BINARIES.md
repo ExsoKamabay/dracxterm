@@ -61,14 +61,28 @@ These are audit findings, not cosmetic notes.
    BusyBox release is a real security task, tracked separately from the F-Droid /
    IzzyOnDroid work.
 
-3. **No build recipe is committed.** Nobody — including the maintainer — can currently
-   reproduce these five files from source using only this repository. That blocks any
-   future reproducible-build (RB) verification, and it is the reason the upstream
-   sources are enumerated above rather than merely referenced.
+3. ~~**No build recipe is committed.**~~ **Resolved 2026-08-22.** `prebuilts/` now
+   builds all five from pinned upstream sources with the pinned NDK, and the output is
+   bit-identical across build directories. See `prebuilts/README.md`.
 
-### Recommended follow-up
+   Two corrections to the upstream table above came out of writing it:
 
-Add a `prebuilts/` directory containing a script that fetches each upstream source at a
-pinned commit/tarball hash and builds it with the same NDK version the app uses, then
-record the resulting SHA-256 here. Until that exists, treat the table above as the only
-record of what is inside the APK.
+   - **android-shmem is Termux's fork, not pelya's.** PRoot's sysvipc extension calls
+     `libandroid_shmat_fd()` and `libandroid_shmdt_fd()`, which exist only in
+     <https://github.com/termux/libandroid-shmem>. Building against
+     `pelya/android-shmem` fails outright. Same BSD 3-Clause licence, with Fredrik
+     Fornwall's copyright added to Sergii Pylypenko's.
+   - **BusyBox 1.29.3 is replaceable now.** The recipe targets 1.38.0.
+
+### Rebuilding
+
+```sh
+./prebuilts/build.sh              # build all five, print SHA-256 of each
+./prebuilts/build.sh --install    # and copy them into jniLibs
+```
+
+**The table above still describes what is shipped today**, which is still the inherited
+Termux/2018 set. The recipe produces replacements; nothing is swapped in until they have
+been exercised on real arm64 hardware — a BusyBox jump across seven years and a change
+of PRoot provenance are not things to ship on a successful link. When they are installed,
+update the SHA-256 column here in the same commit.

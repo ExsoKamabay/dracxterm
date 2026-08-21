@@ -7,6 +7,11 @@ on:
     branches: [main]
   pull_request:
   workflow_dispatch:
+  # The prebuilt recipes reach out to four upstream projects. Nothing in a normal
+  # push exercises them, so they would rot silently; once a week is enough to
+  # notice a moved tarball or an upstream change before a release needs them.
+  schedule:
+    - cron: '0 4 * * 1'
 
 permissions:
   contents: read
@@ -59,3 +64,40 @@ jobs:
           set -eu
           apk=$(find app/build/outputs/apk/debug -name '*.apk' | head -1)
           printf '%s: %s\n' "$apk" "$(du -h "$apk" | cut -f1)"
+
+  prebuilts:
+    name: Prebuilt binaries build from source
+    # Not on every push: this fetches and compiles four upstream projects and
+    # takes minutes. It runs on a schedule and on demand, which is often enough
+    # to catch a moved tarball or a changed upstream before a release needs it.
+    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+
+      - name: Install the pinned NDK
+        run: |
+          set -eu
+          "$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager" --install "ndk;27.0.12077973"
+
+      - name: Build every prebuilt from pinned sources
+        run: ./prebuilts/build.sh
+
+      # The point of the recipes is that the output is a function of the recipe,
+      # not of where it ran. Prove it rather than asserting it in the README.
+      - name: The build must be reproducible across paths
+        run: |
+          set -eu
+          PREBUILTS_WORK="$RUNNER_TEMP/second-build-with-a-longer-path" ./prebuilts/build.sh > /dev/null
+          fail=0
+          for f in libandroid-shmem.so libtalloc.so libbusybox.so libproot.so libproot-loader.so; do
+            a=$(sha256sum "prebuilts/work/out/$f" | cut -d' ' -f1)
+            b=$(sha256sum "$RUNNER_TEMP/second-build-with-a-longer-path/out/$f" | cut -d' ' -f1)
+            if [ "$a" = "$b" ]; then
+              printf '  ok    %s %s\n' "$f" "$a"
+            else
+              printf '  FAIL  %s\n    %s\n    %s\n' "$f" "$a" "$b"
+              fail=1
+            fi
+          done
+          [ "$fail" -eq 0 ] || { echo "prebuilt binaries are not reproducible" >&2; exit 1; }

@@ -33,7 +33,7 @@ table is wrong and the script is right.
 | 14 | Signed release build, not debuggable | done | **Measured**: `assembleRelease` refuses to run without credentials (verified — it fails with "Refusing to build an unsigned release"), and a signed build carries no `application-debuggable` flag. Signature schemes are set explicitly: v1 off, v2 + v3 on |
 | 15 | APK within the ~30 MB reserve | done | **Measured**: release APK is **9,319,452 bytes (9.32 MB)**, debug 10.8 MB. `assets/rootfs/` inside the APK holds only `README.txt` (1,986 bytes) |
 | 16 | No binary downloads without explicit opt-in | done | `ProvisioningActivity` consent panel; nothing is fetched at startup; the copy names the host, the size, and says the file is outside the store's checks |
-| 17 | Releases published as tagged GitHub releases | **pending** | Repo still has 0 tags and 0 releases. `.github/workflows/release.yml` now exists and publishes on `v*` tags — but it has never run. **Blocked on the key rotation in row 20** |
+| 17 | Releases published as tagged GitHub releases | **pending** | 0 tags, 0 releases. `.github/workflows/release.yml` publishes on `v*` tags and its gates are in place, but it has never run — it needs the four `DRACOS_*` repository secrets, which need a rotated key. **Blocked on row 20** |
 | 18 | Tag name matches versionName | done | A workflow step fails the build on mismatch, and also fails when any locale is missing a changelog for the `versionCode` being released |
 | 19 | Never replace a published APK | — | Process rule. `gh release create --verify-tag` only ever creates a release for the tag that triggered the run |
 
@@ -41,12 +41,12 @@ table is wrong and the script is right.
 
 | # | Item | Status | Action |
 |---|---|---|---|
-| 20 | Signing keystore not in the repo | **pending** | The keystore is out of the working tree (moved to `~/Desktop/dracxterm-keystore-quarantine/`, marked `.COMPROMISED`) and `.gitignore` covers it — but it is **still public in the GitHub history**. Rotate the key and purge history **before the first release**: `docs/SECURITY-KEY-ROTATION.md` |
-| 21 | Local tree in sync with the remote | **pending** | The local tree is not a git repository at all, and is far ahead of `main`: `fastlane/`, `licenses/`, `scripts/`, `CHANGELOG.md`, `docs/adr/`, `.github/` exist only locally. The remote still carries the Git LFS pointer for the rootfs and the LFS `.gitattributes` rule |
-| 22 | Git LFS not needed to build | done (locally) | LFS rule removed from `.gitattributes`; the remote still has the old rule until the push in row 21 |
+| 20 | Signing keystore not in the repo | **pending** | Out of the working tree (quarantined as `~/Desktop/dracxterm-keystore-quarantine/dracos-release.keystore.COMPROMISED`), `.gitignore` covers it, and `main` was force-pushed to a history that never contained it. **It is still downloadable** through `refs/pull/{1,2}/head`, which no repository owner can delete — verified after the push. Two actions remain, both the maintainer's: rotate the key (`docs/SECURITY-KEY-ROTATION.md` step 1), and delete the stale `add/add-kali-nethunter-rootfs` branch, which still points at the old history |
+| 21 | Local tree in sync with the remote | done | The working tree is now a git repository and `main` matches it. `fastlane/`, `licenses/`, `scripts/`, `.github/`, `prebuilts/`, `CHANGELOG.md` and `docs/adr/` are on the remote; the LFS pointer and the LFS `.gitattributes` rule are gone |
+| 22 | Git LFS not needed to build | done | No LFS rule on either side; a plain `git clone` produces a buildable tree |
 | 23 | Distribution links point at releases, not a personal drive | done | README links GitHub Releases; the Google Drive links are gone |
 | 24 | The project builds from a clean checkout | done | **Verified**: `./gradlew assembleDebug` and `assembleRelease` both succeed, `./native-tests/run-tests.sh` passes 160 assertions, 0 failures. This required a fix — `RootfsArchive.sizeBytes` did not compile (smart cast lost inside a `runCatching` lambda), so *no* build of this tree was possible before |
-| 25 | Build is reproducible across machines | partial | `ndkVersion` is now pinned to 27.0.12077973 so the C++ engine does not depend on whichever NDK a machine has. The five prebuilt binaries still have no build recipe (see below) |
+| 25 | Build is reproducible across machines | partial | `ndkVersion` is pinned to 27.0.12077973 so the C++ engine does not depend on whichever NDK a machine has. `prebuilts/` now rebuilds all five prebuilt binaries from pinned sources, **bit-identically across build directories** (verified, and re-verified weekly by CI). The APK itself is not RB-verified: that needs the release key and IzzyOnDroid's own toolchain |
 
 ## Risks worth deciding on deliberately
 
@@ -65,11 +65,19 @@ startup — keep it that way.
 
 **BusyBox 1.29.3 (2018).** Old enough that CVEs have accumulated upstream. Not an
 inclusion blocker, but it is a real security item and reviewers do look at bundled
-binaries. Tracked in `docs/THIRD-PARTY-BINARIES.md`.
+binaries. **The fix now exists and is unblocked**: `./prebuilts/build.sh` produces
+BusyBox 1.38.0. It has not been installed, because a seven-year jump needs device
+testing, not a green build. Doing that is the single highest-value item left before
+submission.
 
-**No reproducible-build recipe for the prebuilts.** RB status is optional at
-IzzyOnDroid, but it cannot be attempted while five binaries in the APK cannot be
-rebuilt from this repository.
+**~~No reproducible-build recipe for the prebuilts.~~ Resolved.** `prebuilts/build.sh`
+builds all five from pinned upstream sources with the pinned NDK, and produces the same
+bytes from any build directory. That removes the structural blocker on RB status.
+
+What remains is a product decision rather than a missing capability: the binaries in the
+APK are still the inherited Termux/2018 ones. Swapping in the freshly built set — which
+also moves BusyBox from 1.29.3 to 1.38.0 — changes the runtime and must be exercised on
+real hardware first. See `prebuilts/README.md`.
 
 ## Known gap, tracked deliberately
 
@@ -106,6 +114,10 @@ Still owed, and not claimable from a desktop:
    the *old* image referenced in ADR-0001 — **not** the `2ea1c504…1e4e` pinned in
    `RootfsCatalog`. Do not treat the local copy as a check of the pin.
 8. The release APK is scanned with exodus / VirusTotal before submission.
+9. The freshly built prebuilts (`./prebuilts/build.sh`) are exercised on an arm64 device:
+   the BusyBox fallback shell first, then a full rootfs provisioning and PRoot launch.
+   They compile, link, are AArch64, and carry the expected symbols and `NEEDED` entries —
+   none of which is evidence that they run.
 
 ## Submitting
 

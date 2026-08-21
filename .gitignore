@@ -46,3 +46,7 @@ native-tests/build/
 # AI tools — publishing a skills catalogue at the repo root invites that question for no
 # benefit. Keep it on disk; keep it out of the repository.
 /SKILLS.json
+
+# Prebuilt build tree: fetched upstream sources and build output. The recipe is
+# what belongs in the repository; its results do not.
+/prebuilts/work/
