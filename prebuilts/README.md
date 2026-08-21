@@ -124,6 +124,26 @@ one translation unit and its portability surface is small enough to state
 explicitly. The file explains each define; the notable one is `memset_explicit`,
 which bionic declares only from API 34 while this app targets minSdk 24.
 
+## A note on the checks themselves
+
+Each recipe ends with checks — architecture, symbols, `NEEDED` entries, applet
+count, absence of embedded Termux paths. They are written without pipes, through
+`contains`/`file_contains` in `lib/common.sh`, and that is deliberate.
+
+The obvious idiom, `producer | grep -q pattern`, is silently inverted under
+`set -o pipefail`: `grep -q` exits the instant it matches, the producer dies of
+SIGPIPE, and pipefail makes that the pipeline's status. The pipeline reports
+failure exactly when the pattern **was** found, so the check passes precisely
+when it should have failed.
+
+It was not theoretical here. The proot recipe checks that the built binary
+carries no Termux paths. An early build did carry one, the check found it, and
+the script printed `no com.termux paths` and continued. A CI runner reported the
+truth only because its grep buffered differently — which is how the bug was
+noticed at all.
+
+A check that cannot fail is worse than no check, because it is read as evidence.
+
 ## Two upstreams that are not what they look like
 
 **android-shmem must be Termux's fork.** PRoot's sysvipc extension calls

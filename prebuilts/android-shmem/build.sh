@@ -59,7 +59,7 @@ missing=""
 # sysvipc extension links against, and its absence is the exact failure that
 # building from pelya's upstream produces.
 for want in shmget shmat shmdt shmctl libandroid_shmat_fd libandroid_shmdt_fd; do
-    printf '%s\n' "$syms" | grep -q " $want\$" || missing="$missing $want"
+    contains "$syms" " $want" || missing="$missing $want"
 done
 [ -z "$missing" ] || die "missing exports:$missing"
 printf '%s\n' "$syms" | awk '{print "    " $NF}'

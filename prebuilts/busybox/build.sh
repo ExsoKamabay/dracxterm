@@ -147,12 +147,14 @@ assert_arm64 "$SRC/busybox"
 # --- checks ------------------------------------------------------------------
 note "sanity checks"
 
-"$READELF" -h "$SRC/busybox" | grep -qE 'Type:.*(EXEC|DYN)' || die "not an executable"
+hdr=$("$READELF" -h "$SRC/busybox")
+contains "$hdr" "EXEC" || contains "$hdr" "DYN" || die "not an executable"
 
 # A static binary must have no NEEDED entries. If it does, CONFIG_STATIC did not
 # take and the binary will fail to start inside the PRoot rootfs, where the
 # dynamic loader resolves against a different libc.
-if "$READELF" --dynamic "$SRC/busybox" 2>/dev/null | grep -q 'NEEDED'; then
+dyn=$("$READELF" --dynamic "$SRC/busybox" 2>/dev/null || true)
+if contains "$dyn" "NEEDED"; then
     die "busybox is dynamically linked; CONFIG_STATIC did not take effect"
 fi
 printf '    statically linked, no NEEDED entries\n'
@@ -169,8 +171,9 @@ printf '    %s applets\n' "$applet_count"
 # The ones drac-Xterm actually depends on. A missing shell means the fallback
 # terminal has nothing to run.
 missing=""
+table=$(cat "$SRC/include/applet_tables.h")
 for want in sh ash ls cat cp mv rm mkdir mount tar wget chmod grep sed awk; do
-    grep -q "\"$want\"" "$SRC/include/applet_tables.h" || missing="$missing $want"
+    contains "$table" "\"$want\"" || missing="$missing $want"
 done
 [ -z "$missing" ] && printf '    required applets present\n' \
                   || die "required applets missing:$missing"

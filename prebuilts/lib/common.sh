@@ -181,6 +181,38 @@ fetch_git() {
     note "verified $name @ $(git -C "$path" rev-parse --short HEAD)"
 }
 
+# --- matching ----------------------------------------------------------------
+#
+# Every sanity check goes through these instead of `producer | grep -q pattern`.
+#
+# That idiom is silently broken under `set -o pipefail`, which this file sets:
+# grep -q exits the moment it matches, the producer is killed by SIGPIPE, and
+# pipefail makes the pipeline's status that non-zero producer. So the pipeline
+# reports FAILURE exactly when the pattern WAS found. Every check written that
+# way passes precisely when it should have failed.
+#
+# It cost a real bug here: the proot recipe checks that the built binary carries
+# no com.termux paths. The binary did carry one, the check found it, and the
+# script printed "no com.termux paths" and carried on. A CI runner reported the
+# truth only because its grep happened to buffer differently.
+#
+# Capturing first removes the pipe, and with it the whole failure mode.
+
+# contains <haystack-string> <substring>
+contains() {
+    case "$1" in
+        *"$2"*) return 0 ;;
+        *) return 1 ;;
+    esac
+}
+
+# file_contains <file> <substring>   -- searches printable strings in a binary
+file_contains() {
+    local found
+    found=$(strings -a "$1" 2>/dev/null || true)
+    contains "$found" "$2"
+}
+
 # --- output ------------------------------------------------------------------
 
 # install_artifact <built-file> <lib-name.so>

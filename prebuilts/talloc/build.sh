@@ -58,18 +58,17 @@ assert_arm64 "$BUILD/libtalloc.so"
 note "sanity checks"
 syms=$("$TOOLCHAIN/bin/llvm-nm" -D --defined-only "$BUILD/libtalloc.so")
 for want in talloc_named_const _talloc_free talloc_strdup _talloc_realloc; do
-    printf '%s\n' "$syms" | grep -q " $want\$" \
-        || die "libtalloc.so does not export $want"
+    contains "$syms" " $want" || die "libtalloc.so does not export $want"
 done
-printf '    %s exported symbols\n' "$(printf '%s\n' "$syms" | grep -c .)"
+printf '    %s exported symbols\n' "$(printf '%s\n' "$syms" | wc -l)"
 
-"$READELF" --dynamic "$BUILD/libtalloc.so" | grep -q 'SONAME.*libtalloc.so.2' \
-    || die "SONAME is not libtalloc.so.2; PRoot will not find it"
+dyn=$("$READELF" --dynamic "$BUILD/libtalloc.so")
+contains "$dyn" "libtalloc.so.2" || die "SONAME is not libtalloc.so.2; PRoot will not find it"
 printf '    SONAME libtalloc.so.2\n'
 
 # The randomised-magic constructor. Its absence means HAVE_CONSTRUCTOR_ATTRIBUTE
 # did not take effect and talloc's anti-corruption hardening is off.
-"$READELF" --dynamic "$BUILD/libtalloc.so" | grep -q 'INIT_ARRAY' \
+contains "$dyn" "INIT_ARRAY" \
     || warn "no INIT_ARRAY: talloc's randomised magic constructor did not link in"
 
 install_artifact "$BUILD/libtalloc.so" libtalloc.so

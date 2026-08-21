@@ -90,10 +90,21 @@ for want in libtalloc.so.2 libandroid-shmem.so libc.so; do
 done
 
 # The whole point of building from source rather than reusing the Termux binary.
-if strings "$SRC/proot" | grep -q 'com\.termux'; then
-    die "the built proot still contains com.termux paths; the build used the wrong source"
-fi
-printf '    no com.termux paths\n'
+#
+# Only *paths* matter here. Upstream cli.c carries one diagnostic message that
+# mentions /data/data/com.termux/... while explaining that termux-exec is
+# interfering -- that string is a message about Termux, not a dependency on it,
+# and it is present in any honest build of this source. Matching it would make
+# the check unfailable-by-construction, which is worse than no check.
+for bad in \
+    "/data/data/com.termux/files/usr/lib" \
+    "/data/data/com.termux/files/usr/libexec"
+do
+    if file_contains "$SRC/proot" "$bad"; then
+        die "the built proot embeds $bad -- this is a Termux binary, not a build from these sources"
+    fi
+done
+printf '    no embedded Termux library or loader paths\n'
 
 install_artifact "$SRC/proot" libproot.so
 install_artifact "$SRC/loader/loader" libproot-loader.so
