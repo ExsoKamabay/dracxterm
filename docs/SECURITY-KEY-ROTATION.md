@@ -67,9 +67,31 @@ preserved locally at `~/Desktop/dracxterm-remote-backup.bundle` and
 
 That path was chosen over a filter-repo rewrite because the repository had eight commits
 by one author and zero published releases, so there was nothing to preserve that was worth
-the extra failure modes of a history rewrite. A rewrite leaves the old objects reachable
-through pull-request refs and GitHub's object cache until support purges them; a history
-that never contained the blob does not.
+the extra failure modes of a history rewrite.
+
+**It did not make the blob unreachable, and nothing a repository owner can do would
+have.** Verified immediately after the force-push: the old commits still resolve by SHA,
+and
+
+    GET /repos/ExsoKamabay/dracxterm/contents/keystore/dracos-release.keystore?ref=d5bb6ac
+
+still returns the 2,744-byte keystore. GitHub keeps merged pull requests' commits alive
+through `refs/pull/1/head` and `refs/pull/2/head`, which a force-push does not touch and
+which the repository owner cannot delete. A filter-repo rewrite would have left exactly
+the same refs behind. This is a property of GitHub, not a shortcoming of the method
+chosen.
+
+Remaining reachability, and who can close it:
+
+| Path | Status | Who can remove it |
+|---|---|---|
+| `refs/heads/main` | closed — replaced by a history the blob was never in | done |
+| `refs/heads/add/add-kali-nethunter-rootfs` | **open** — merged-PR leftover still pointing at `94f24cf` | the maintainer: `gh api -X DELETE repos/ExsoKamabay/dracxterm/git/refs/heads/add/add-kali-nethunter-rootfs` |
+| `refs/pull/1/head`, `refs/pull/2/head` | **open** | GitHub Support only (step 4 below) |
+
+The practical conclusion does not change and is the reason step 1 is not optional:
+**assume the keystore file is public forever.** Rotation is the fix; history hygiene only
+narrows how easily it is found.
 
 If the situation ever recurs on a repository whose history *is* worth keeping, the rewrite
 path still exists:
