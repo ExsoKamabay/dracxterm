@@ -204,22 +204,24 @@ export ANDROID_SERIAL=<serial>
 ### Apa yang dikerjakan
 
 Script memeriksa ABI dan level API perangkat lebih dulu, menyalin kelima biner
-ke `/data/local/tmp/dracxterm-smoke/`, lalu menjalankan 18 pemeriksaan:
+ke `/data/local/tmp/dracxterm-smoke/`, lalu menjalankan 20 pemeriksaan:
 
 **BusyBox (12)** — versi, `sh`, `ls`, `cat`, `sed`, `awk`, `grep`, tar
 round-trip, ketersediaan `xz`, `wget`, `mount`, dan jumlah applet.
 
-**PRoot (6)** — versi terpin, resolusi shared library, lalu **membangun rootfs
-minimal dari BusyBox itu sendiri di perangkat dan memasukinya**: menjalankan
-shell di dalamnya, melihat isi `/`, membaca file lewat bind mount, dan memeriksa
-`uid=0`. Itu adalah jalur runtime aplikasi dalam bentuk mini — kalau bagian ini
-jalan, menyiapkan rootfs sungguhan hanya soal skala.
+**PRoot (8)** — versi terpin, kedua akselerator bawaan (`process_vm` dan
+`seccomp_filter`, yang membuktikan probe `build.h` menghasilkan jawaban nyata),
+resolusi shared library, lalu **membangun rootfs minimal dari BusyBox itu sendiri
+di perangkat dan memasukinya**: menjalankan shell di dalamnya, melihat isi `/`,
+membaca file lewat bind mount, dan memeriksa `uid=0`. Itu jalur runtime aplikasi
+dalam bentuk mini — kalau bagian ini jalan, menyiapkan rootfs sungguhan hanya
+soal skala.
 
 ### Membaca hasilnya
 
 ```
 Result
-  18 passed, 0 failed
+  20 passed, 0 failed
 
 The built binaries work on real hardware.
 ```
