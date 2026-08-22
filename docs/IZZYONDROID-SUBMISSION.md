@@ -126,13 +126,22 @@ Contact details for requesting inclusion are on the
 URL, the tagged release URL, the licence, and a one-line description of what the app
 does and who it is for.
 
-Order of operations, because rows 17, 20 and 21 are entangled:
+Order of operations, because rows 17, 20 and 21 are entangled. `scripts/release-prep.sh`
+drives all of it and enforces the order — each step refuses to run until the ones it
+depends on have actually happened, checked against the world rather than a marker file:
 
-1. Rotate the signing key (`docs/SECURITY-KEY-ROTATION.md` step 1–2).
-2. Purge `keystore/` from the GitHub history (`scripts/purge-keystore-history.sh`) and
-   force-push.
-3. Push this tree to `main` so the remote carries `.github/`, `fastlane/`, `licenses/`
-   and the LFS-free `.gitattributes`.
-4. Add the four `DRACOS_*` repository secrets used by `.github/workflows/release.yml`.
-5. Tag `v1.1.0` and let the workflow publish the release.
-6. Only then request inclusion.
+```sh
+./scripts/release-prep.sh              # what is done, what is not
+./scripts/release-prep.sh rotate-key   # 1. new signing key, outside the repo
+./scripts/release-prep.sh clean-refs   # 2. delete the branch still holding the old history
+./scripts/release-prep.sh device-test  # 3. run the rebuilt prebuilts on real arm64 hardware
+./scripts/release-prep.sh secrets      # 4. upload the four DRACOS_* secrets
+./scripts/release-prep.sh tag          # 5. tag v1.1.0; CI builds and publishes
+```
+
+Step 3 is only a gate on `./prebuilts/build.sh --install`, not on this release — the APK
+still ships the inherited binaries. The remaining manual item is asking GitHub Support to
+purge the pull-request refs (step 4 of `docs/SECURITY-KEY-ROTATION.md`), which no script
+can do.
+
+Only then request inclusion.

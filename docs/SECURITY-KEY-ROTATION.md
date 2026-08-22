@@ -24,6 +24,15 @@ only reason this is cheap to fix right now. It stops being cheap the moment v1 s
 
 ## Fix, in order
 
+Steps 1, 2 and 5 are automated by `scripts/release-prep.sh rotate-key`, which generates
+the key, writes the four properties with the right file mode, and proves the result signs
+a release before it tells you it worked. It refuses to overwrite an existing keystore.
+The manual instructions below remain the specification of what it does — read them if you
+would rather do it by hand, or to check the script.
+
+Step 3 is already done. Step 4 cannot be automated: only GitHub Support can purge the
+pull-request refs.
+
 ### 1. Generate a new key, outside the repository
 
 ```sh
