@@ -34,26 +34,27 @@ Bundled Prebuilt Binaries
 
 The APK ships the following prebuilt ARM64 binaries under
 app/src/main/jniLibs/arm64-v8a/. drac-Xterm conveys these binaries and
-therefore carries the source-code obligations attached to them. Versions,
-SHA-256 checksums and upstream sources are recorded in
+therefore carries the source-code obligations attached to them. Each is built
+from pinned upstream sources by prebuilts/build.sh, reproducibly. Versions,
+SHA-256 checksums, upstream pins and local patches are recorded in
 docs/THIRD-PARTY-BINARIES.md; full license texts are in licenses/.
 
-* libbusybox.so — BusyBox 1.29.3 (osm0sis Android NDK build)
+* libbusybox.so — BusyBox 1.38.0
   Copyright the BusyBox authors. Licensed under the GNU General Public
   License, version 2 only. See licenses/GPL-2.0.txt.
 
-* libproot.so, libproot-loader.so — PRoot 5.1.0 (Termux build)
+* libproot.so, libproot-loader.so — PRoot v5.1.107.91 (termux/proot)
   Copyright the PRoot authors. Licensed under the GNU General Public License,
   version 2 or later. See licenses/GPL-2.0.txt.
 
-* libtalloc.so — talloc (Termux build)
+* libtalloc.so — talloc 2.5.0
   Copyright the Samba/talloc authors. Licensed under the GNU Lesser General
   Public License, version 3 or later. See licenses/LGPL-3.0.txt and
   licenses/GPL-3.0.txt.
 
-* libandroid-shmem.so — android-shmem
-  Copyright the android-shmem authors. Licensed under the BSD 3-Clause
-  License. See licenses/BSD-3-Clause.txt.
+* libandroid-shmem.so — libandroid-shmem v0.7 (termux/libandroid-shmem)
+  Copyright 2013 Sergii Pylypenko and 2017 Fredrik Fornwall. Licensed under
+  the BSD 3-Clause License. See licenses/BSD-3-Clause.txt.
 
 WRITTEN OFFER. For any of the binaries listed in this section, the maintainer
 of drac-Xterm will provide the complete corresponding machine-readable source

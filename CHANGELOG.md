@@ -77,8 +77,26 @@ All notable changes to drac-Xterm are documented in this file.
   calls `libandroid_shmat_fd()`, which only the fork has, so the documented upstream
   could not have produced the shipped binary.
 
-  Nothing is installed into `jniLibs` by this change. The recipe produces candidates;
-  a BusyBox jump from 1.29.3 to 1.38.0 needs device testing before it ships.
+### Changed — the APK now ships binaries built from source
+
+- `app/src/main/jniLibs/arm64-v8a/` no longer contains the inherited Termux and 2018
+  builds. All five binaries are the ones `prebuilts/build.sh` produces, with the SHA-256
+  values recorded in `docs/THIRD-PARTY-BINARIES.md` and `NOTICE` updated to match.
+- **BusyBox 1.29.3 (2018) → 1.38.0.** Seven years of upstream fixes, including the CVEs
+  that made the old build a standing security item. The applet set is not identical:
+  `ifconfig`, `route`, `netstat`, `ip`, `hush`, `logname`, `swapon`/`swapoff` and the SysV
+  IPC tools are gone, each because it does not compile against bionic — reasons recorded
+  per option in `prebuilts/busybox/android.fragment`.
+- **PRoot is no longer a Termux binary.** The shipped one embedded
+  `/data/data/com.termux/files/usr/lib` and `…/libexec/proot/loader`, which `Bootstrap`
+  worked around at runtime. The replacement contains no Termux paths at all, so those
+  workarounds are belt-and-braces rather than load-bearing.
+- Verified on hardware before shipping: 20 checks on an Infinix X6726B (Android 15,
+  arm64-v8a) covering the BusyBox shell and coreutils, a tar round-trip, PRoot's two
+  built-in accelerators, and entering a minimal rootfs to run a shell, read through a
+  bind mount and confirm `uid=0`. Re-runnable with
+  `./scripts/release-prep.sh device-test`.
+- Release APK: 9.24 MB.
 
 ### Security
 

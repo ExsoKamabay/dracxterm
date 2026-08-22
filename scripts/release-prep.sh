@@ -509,7 +509,16 @@ $(printf '%s\n' "$devices" | sed 's/^/    /')"
     dt_expect "applet count is sane"          "OK"              "$ENV $DEVICE_DIR/busybox sh -c 'n=\$($DEVICE_DIR/busybox --list | $DEVICE_DIR/busybox wc -l); [ \$n -gt 250 ] && echo OK || echo \"only \$n\"'"
 
     head1 'PRoot'
-    dt_expect "reports the pinned version"    "v5.1.107.91"     "$ENV $DEVICE_DIR/proot --version 2>&1 | head -3"
+    # No `head` here. proot --version prints a four-line ASCII banner with the
+    # version tucked into the last line of it, so truncating the output hides
+    # exactly the thing being checked -- which it did, reporting a failure
+    # against a binary that was fine.
+    dt_expect "reports the pinned version"    "v5.1.107.91"     "$ENV $DEVICE_DIR/proot --version 2>&1"
+    # The two accelerators are compiled in from build.h, which the makefile fills
+    # by probing at build time. Both "yes" means that probe produced real answers
+    # rather than silently defaulting to off.
+    dt_expect "process_vm accelerator built in"  "process_vm = yes"     "$ENV $DEVICE_DIR/proot --version 2>&1"
+    dt_expect "seccomp_filter accelerator built in" "seccomp_filter = yes" "$ENV $DEVICE_DIR/proot --version 2>&1"
     dt_check  "resolves its shared libraries"                   "$ENV $DEVICE_DIR/proot --help >/dev/null 2>&1"
 
     # The real thing: a minimal rootfs built out of BusyBox itself, entered
