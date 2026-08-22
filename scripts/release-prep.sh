@@ -133,6 +133,42 @@ tag_published() {
 
 device_test_passed() { [ -f "$REPO_ROOT/prebuilts/work/.device-test-passed" ]; }
 
+# What docs/THIRD-PARTY-BINARIES.md says is in the APK. That table is the claim
+# the project makes to anyone auditing the release, so it is the right thing to
+# compare against -- not git HEAD, which stops being a useful reference the
+# moment new binaries are committed.
+documented_digest() {
+    sed -n "/\`$1\`/s/.*\`\([0-9a-f]\{64\}\)\`.*/\1/p" docs/THIRD-PARTY-BINARIES.md | head -1
+}
+
+# 0 when every binary in jniLibs matches the documented inventory.
+apk_binaries_documented() {
+    local f now doc
+    for f in app/src/main/jniLibs/arm64-v8a/*.so; do
+        [ -e "$f" ] || return 1
+        now=$(sha256sum "$f" | cut -d' ' -f1)
+        doc=$(documented_digest "$(basename "$f")")
+        [ -n "$doc" ] || return 1
+        [ "$now" = "$doc" ] || return 1
+    done
+    return 0
+}
+
+# 0 when every binary in jniLibs is one that actually passed on a device. The
+# device-test record stores a digest per file precisely so this can be asked.
+installed_matches_device_test() {
+    local marker="$REPO_ROOT/prebuilts/work/.device-test-passed"
+    [ -f "$marker" ] || return 1
+    local record f now
+    record=$(cat "$marker")
+    for f in app/src/main/jniLibs/arm64-v8a/*.so; do
+        [ -e "$f" ] || return 1
+        now=$(sha256sum "$f" | cut -d' ' -f1)
+        contains "$record" "$now" || return 1
+    done
+    return 0
+}
+
 # =============================================================================
 # status
 # =============================================================================
@@ -612,7 +648,45 @@ cmd_tag() {
     # against it.
     note "pre-flight"
 
-    [ -z "$(git status --porcelain)" ] || die "working tree is dirty. Commit or stash first."
+    # This is a hard gate, not a warning.
+    #
+    # It used to be a warning that said "fine only because they are NOT in the
+    # APK" -- which stops being true the moment someone runs
+    # ./prebuilts/build.sh --install. A warning is the wrong instrument for a
+    # condition that changes what ships.
+    if apk_binaries_documented; then
+        ok "APK ships the binaries documented in docs/THIRD-PARTY-BINARIES.md"
+    elif installed_matches_device_test; then
+        die "the APK contains freshly built binaries that DID pass on a device,
+  but docs/THIRD-PARTY-BINARIES.md still records the old SHA-256 values. The
+  documented inventory would not match what you are about to publish.
+
+  Update the SHA-256 column there, commit, then tag. Current digests:
+$(for f in app/src/main/jniLibs/arm64-v8a/*.so; do
+      printf '    %s  %s\n' "$(sha256sum "$f" | cut -d' ' -f1)" "$(basename "$f")"
+  done)"
+    else
+        die "the APK contains prebuilt binaries that have never been run.
+
+  app/src/main/jniLibs/arm64-v8a/ does not match docs/THIRD-PARTY-BINARIES.md,
+  so ./prebuilts/build.sh --install has replaced them. Those binaries compile and
+  link, but nothing has shown they execute -- and BusyBox moves from 1.29.3 (2018)
+  to 1.38.0 in this change.
+
+  Either exercise them:
+      $0 device-test
+
+  or put the shipped set back and release without them:
+      git checkout -- app/src/main/jniLibs/arm64-v8a/
+
+  Publishing an APK whose shell has never been started is not a risk worth taking
+  for a first release that also pins your signing certificate forever."
+    fi
+
+    if [ -n "$(git status --porcelain)" ]; then
+        die "working tree is dirty. Commit or stash first:
+$(git status --porcelain | sed 's/^/    /')"
+    fi
     ok "working tree clean"
 
     local branch; branch=$(git rev-parse --abbrev-ref HEAD)
@@ -652,14 +726,6 @@ cmd_tag() {
         *) warn "could not verify the secrets; the workflow may fail at the signing step" ;;
     esac
 
-    if device_test_passed; then
-        ok "prebuilts were exercised on a device"
-    else
-        warn "the rebuilt prebuilt binaries have never been run on hardware.
-        That is fine only because they are NOT in the APK: this release ships the
-        inherited Termux/2018 set. If you ran ./prebuilts/build.sh --install, stop
-        and run '$0 device-test' first."
-    fi
 
     printf '\n'
     cat <<EOF

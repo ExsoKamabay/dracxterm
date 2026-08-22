@@ -50,3 +50,14 @@ native-tests/build/
 # Prebuilt build tree: fetched upstream sources and build output. The recipe is
 # what belongs in the repository; its results do not.
 /prebuilts/work/
+
+# --- Notes files that tend to collect secrets. A passphrase in docs/pass.txt is
+# --- how this repository leaked a signing key the first time; the second time it
+# --- was caught only because someone happened to look. Catch it mechanically.
+pass.txt
+passwords.txt
+secrets.txt
+credentials.txt
+*-password*
+*-passphrase*
+*.secret
