@@ -33,7 +33,9 @@ KEY_DIR="$HOME/.android-keys"
 KEYSTORE="$KEY_DIR/dracxterm-release.jks"
 KEY_ALIAS="dracxterm"
 PREBUILT_OUT="${PREBUILTS_WORK:-$REPO_ROOT/prebuilts/work}/out"
-DEVICE_DIR="/data/local/tmp/dracxterm-smoke"
+# Overridable: some hardened builds mount /data/local/tmp noexec, and the test
+# harness needs somewhere else entirely.
+DEVICE_DIR="${DRACXTERM_DEVICE_DIR:-/data/local/tmp/dracxterm-smoke}"
 
 # --- output ------------------------------------------------------------------
 
@@ -410,9 +412,13 @@ EOF
     done
 
     # --- device ---
+    # `adb devices` prints a header line, then "<serial>\t<state>" per device.
+    # Match on the state column rather than stripping text and dropping the first
+    # line: doing both means the header is removed twice and the first real device
+    # with it, so a single connected phone reads as none at all.
     local devices count
-    devices=$(adb devices | sed -n 's/[[:space:]]*device$//p' | tail -n +2 | grep -v '^$' || true)
-    count=$(printf '%s\n' "$devices" | grep -c . || true)
+    devices=$(adb devices | awk '$2 == "device" { print $1 }')
+    count=$(printf '%s' "$devices" | awk 'NF' | wc -l)
     if [ "$count" -eq 0 ]; then
         die "no device connected.
   Connect an arm64 Android device with USB debugging enabled, or start an
