@@ -253,7 +253,9 @@ DT_VERBOSE=1 ./scripts/release-prep.sh device-test
 
 ### Setelah lulus
 
-Memasang biner baru ke APK adalah keputusan terpisah:
+Memasang biner baru ke APK adalah keputusan terpisah — dan urutannya penting:
+jalankan `device-test` **sebelum** `--install`, bukan sesudah. Kalau terbalik,
+langkah 5 akan menolak sampai pengujian dilakukan.
 
 ```sh
 ./prebuilts/build.sh --install
@@ -399,6 +401,62 @@ yang tidak bisa diselesaikan script mana pun: kebijakan IzzyOnDroid soal
 perangkat lunak yang dibuat dengan bantuan AI.
 
 ---
+
+## Kesalahan umum
+
+Dua hal ini benar-benar terjadi saat menjalankan panduan ini pertama kali.
+
+### 1. Menjalankan `--install` sebelum `device-test`
+
+```sh
+./prebuilts/build.sh --install     # <- biner diganti
+./scripts/release-prep.sh tag      # <- ditolak
+```
+
+Kalau `--install` dijalankan sebelum langkah 3, isi APK berubah menjadi biner
+yang belum pernah dijalankan sama sekali. Sejak versi sekarang, `tag`
+**menolak** kondisi itu, bukan sekadar memperingatkan:
+
+```
+error: the APK contains prebuilt binaries that have never been run.
+```
+
+Dua jalan keluar, keduanya disebutkan oleh pesan errornya:
+
+```sh
+./scripts/release-prep.sh device-test        # uji sekarang, lalu lanjut
+git checkout -- app/src/main/jniLibs/arm64-v8a/   # kembalikan biner lama
+```
+
+Kalau uji perangkat lulus tapi `docs/THIRD-PARTY-BINARIES.md` belum diperbarui,
+`tag` juga menolak — dan mencetak SHA-256 terbaru yang harus Anda tulis ke tabel
+itu. Dokumentasi dan isi APK tidak boleh berbeda diam-diam.
+
+Urutan yang benar: **`device-test` dulu, baru `--install`.**
+
+### 2. Menyimpan passphrase di dalam direktori repo
+
+Jangan menyalin keluaran `rotate-key` ke file di dalam `~/Desktop/dracxterm/`.
+Menaruh passphrase di `docs/pass.txt` berarti `git add -A` berikutnya
+meng-commit kunci Anda ke repositori publik — persis kesalahan yang membakar
+kunci pertama project ini.
+
+`.gitignore` sekarang menutupi `pass.txt`, `secrets.txt`, `*-password*`, dan
+sejenisnya. Tapi jangan bergantung pada itu. Simpan catatan sertifikat di luar
+repo:
+
+```sh
+~/.android-keys/certificate-notes.txt     # chmod 600
+```
+
+Kalau terlanjur, periksa apakah sudah masuk history sebelum panik:
+
+```sh
+git log --all --oneline -- docs/pass.txt
+```
+
+Kosong berarti belum pernah ter-commit — cukup pindahkan file-nya, tidak perlu
+rotasi ulang.
 
 ## Yang tidak diotomatisasi, dan alasannya
 
