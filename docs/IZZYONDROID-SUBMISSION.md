@@ -30,10 +30,10 @@ table is wrong and the script is right.
 | 11 | `changelogs/<versionCode>.txt` ≤ 500 bytes | done | `3.txt` — 431 bytes (en-US), 420 (id) |
 | 12 | Icon 48–512 px, PNG/JPG | done | `images/icon.png`, 512×512 |
 | 13 | Screenshots, longer:shorter edge ≤ 2:1 | done | Six screenshots at 822×1600 (1.95:1) |
-| 14 | Signed release build, not debuggable | done | **Measured**: `assembleRelease` refuses to run without credentials (verified — it fails with "Refusing to build an unsigned release"), and a signed build carries no `application-debuggable` flag. Signature schemes are set explicitly: v1 off, v2 + v3 on |
-| 15 | APK within the ~30 MB reserve | done | **Measured**: release APK is **9,319,452 bytes (9.32 MB)**, debug 10.8 MB. `assets/rootfs/` inside the APK holds only `README.txt` (1,986 bytes) |
+| 14 | Signed release build, not debuggable | done | **Verified on the published APK**: signed v2 + v3, certificate SHA-256 `a046d6f8…1ad5`, RSA 4096, `CN=drac-Xterm`, no `application-debuggable` flag. That certificate is the rotated key, not the leaked one |
+| 15 | APK within the ~30 MB reserve | done | **Published APK is 9,240,784 bytes (9.24 MB)** against a ~30 MB reserve. `assets/rootfs/` inside it holds only `README.txt` (1,986 bytes) |
 | 16 | No binary downloads without explicit opt-in | done | `ProvisioningActivity` consent panel; nothing is fetched at startup; the copy names the host, the size, and says the file is outside the store's checks |
-| 17 | Releases published as tagged GitHub releases | **pending** | 0 tags, 0 releases. `.github/workflows/release.yml` publishes on `v*` tags and its gates are in place, but it has never run — it needs the four `DRACOS_*` repository secrets, which need a rotated key. **Blocked on row 20** |
+| 17 | Releases published as tagged GitHub releases | done | **v1.1.0 published 2026-08-22.** `.github/workflows/release.yml` ran green and attached `drac-Xterm-1.1.0-3-arm64-v8a.apk` (9,240,784 bytes) plus its `.sha256`. Checksum verified against the published file |
 | 18 | Tag name matches versionName | done | A workflow step fails the build on mismatch, and also fails when any locale is missing a changelog for the `versionCode` being released |
 | 19 | Never replace a published APK | — | Process rule. `gh release create --verify-tag` only ever creates a release for the tag that triggered the run |
 
@@ -41,8 +41,8 @@ table is wrong and the script is right.
 
 | # | Item | Status | Action |
 |---|---|---|---|
-| 20 | Signing keystore not in the repo | **pending** | Out of the working tree (quarantined as `~/Desktop/dracxterm-keystore-quarantine/dracos-release.keystore.COMPROMISED`), `.gitignore` covers it, and `main` was force-pushed to a history that never contained it. **It is still downloadable** through `refs/pull/{1,2}/head`, which no repository owner can delete — verified after the push. Two actions remain, both the maintainer's: rotate the key (`docs/SECURITY-KEY-ROTATION.md` step 1), and delete the stale `add/add-kali-nethunter-rootfs` branch, which still points at the old history |
-| 21 | Local tree in sync with the remote | done | The working tree is now a git repository and `main` matches it. `fastlane/`, `licenses/`, `scripts/`, `.github/`, `prebuilts/`, `CHANGELOG.md` and `docs/adr/` are on the remote; the LFS pointer and the LFS `.gitattributes` rule are gone |
+| 20 | Signing keystore not in the repo | done, with a permanent caveat | Key rotated; v1.1.0 is signed with the new one. Stale branch deleted, and `main` never contained the old keystore. **The leaked file is still downloadable through `refs/pull/{1,2}/head`** — no repository owner can delete those, only GitHub Support. It no longer matters for this app: the burned key signs nothing |
+| 21 | Local tree in sync with the remote | done | Same commit and same tree hash on both sides (`ca713a24…`), working tree clean, `v1.1.0` present on both |
 | 22 | Git LFS not needed to build | done | No LFS rule on either side; a plain `git clone` produces a buildable tree |
 | 23 | Distribution links point at releases, not a personal drive | done | README links GitHub Releases; the Google Drive links are gone |
 | 24 | The project builds from a clean checkout | done | **Verified**: `./gradlew assembleDebug` and `assembleRelease` both succeed, `./native-tests/run-tests.sh` passes 160 assertions, 0 failures. This required a fix — `RootfsArchive.sizeBytes` did not compile (smart cast lost inside a `runCatching` lambda), so *no* build of this tree was possible before |
@@ -126,22 +126,13 @@ Contact details for requesting inclusion are on the
 URL, the tagged release URL, the licence, and a one-line description of what the app
 does and who it is for.
 
-Order of operations, because rows 17, 20 and 21 are entangled. `scripts/release-prep.sh`
-drives all of it and enforces the order — each step refuses to run until the ones it
-depends on have actually happened, checked against the world rather than a marker file:
+**Rows 17, 20 and 21 are closed.** `scripts/release-prep.sh` drove all five steps and
+now reports `ok` for each; `docs/PANDUAN-RILIS.md` is the walkthrough.
 
-```sh
-./scripts/release-prep.sh              # what is done, what is not
-./scripts/release-prep.sh rotate-key   # 1. new signing key, outside the repo
-./scripts/release-prep.sh clean-refs   # 2. delete the branch still holding the old history
-./scripts/release-prep.sh device-test  # 3. run the rebuilt prebuilts on real arm64 hardware
-./scripts/release-prep.sh secrets      # 4. upload the four DRACOS_* secrets
-./scripts/release-prep.sh tag          # 5. tag v1.1.0; CI builds and publishes
-```
+What is left is not mechanical:
 
-Step 3 is only a gate on `./prebuilts/build.sh --install`, not on this release — the APK
-still ships the inherited binaries. The remaining manual item is asking GitHub Support to
-purge the pull-request refs (step 4 of `docs/SECURITY-KEY-ROTATION.md`), which no script
-can do.
-
-Only then request inclusion.
+1. Ask GitHub Support to purge `refs/pull/{1,2}/head` (<https://support.github.com/>).
+   Housekeeping now rather than a security fix — the key those refs expose signs nothing.
+2. Scan the published APK with [exodus](https://reports.exodus-privacy.eu.org/) and
+   VirusTotal.
+3. Request inclusion, and decide how to represent the generative-AI question below.
