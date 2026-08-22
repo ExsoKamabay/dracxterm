@@ -763,7 +763,24 @@ EOF
 
 usage() { sed -n '3,20p' "$0" | sed 's/^# \{0,1\}//'; }
 
-case "${1:-status}" in
+# No subcommand takes arguments. Silently ignoring extras is worse than it
+# sounds: `release-prep.sh tag RELEASE` looks like it supplies the confirmation
+# and skips the prompt, and it did nothing at all -- the confirmation still came
+# from what was typed at the prompt afterwards. Someone who did not notice would
+# believe an unattended release is possible. It is not, on purpose.
+cmd="${1:-status}"
+shift || true
+if [ "$#" -gt 0 ]; then
+    printf '%serror:%s `%s` takes no arguments, but got: %s\n' \
+        "$C_RED" "$C_OFF" "$cmd" "$*" >&2
+    printf '\nConfirmations are typed at the prompt, never passed as arguments.\n' >&2
+    printf 'That is deliberate: an unattended release is not something this\n' >&2
+    printf 'script will do for you.\n\n' >&2
+    usage >&2
+    exit 2
+fi
+
+case "$cmd" in
     status)      cmd_status ;;
     rotate-key)  cmd_rotate_key ;;
     clean-refs)  cmd_clean_refs ;;
@@ -771,5 +788,5 @@ case "${1:-status}" in
     secrets)     cmd_secrets ;;
     tag)         cmd_tag ;;
     -h|--help|help) usage ;;
-    *) printf 'unknown command: %s\n\n' "$1" >&2; usage >&2; exit 2 ;;
+    *) printf 'unknown command: %s\n\n' "$cmd" >&2; usage >&2; exit 2 ;;
 esac
