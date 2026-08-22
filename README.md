@@ -61,6 +61,19 @@ Mesin ANSI/VT diuji sebagai program C++ host, terpisah dari Android:
 ./native-tests/run-tests.sh
 ```
 
+### Menerbitkan rilis
+
+Seluruh langkah antara repositori ini dan rilis pertama dijalankan lewat satu script:
+
+```bash
+./scripts/release-prep.sh          # lihat apa yang sudah dan belum dikerjakan
+```
+
+Script itu menangani rotasi kunci penandatanganan, pembersihan referensi lama, uji biner
+prebuilt di perangkat arm64, pengunggahan secret ke GitHub Actions, dan pembuatan tag
+rilis — dengan urutan yang ditegakkan, bukan sekadar disarankan. Panduan langkah demi
+langkahnya ada di [`docs/PANDUAN-RILIS.md`](docs/PANDUAN-RILIS.md).
+
 ## Fitur
 
 - Terminal interaktif dengan dukungan ANSI/VT dan UTF-8: warna, bentuk cursor, scrollback, layar alternatif, karakter Unicode lebar, seleksi, pencarian buffer, clipboard, mouse tracking, dan bracketed paste.
